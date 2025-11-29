@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Teacher Dashboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom configuration for Tailwind -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Enable dark mode via class
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-green': '#10B981', // Emerald 500
+                        'secondary-blue': '#3B82F6', // Blue 500
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Apply smooth transitions globally */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Ensure the main container scrolls independently */
+        #dashboard-layout {
+            height: 100vh;
+            display: grid;
+            grid-template-rows: 64px 1fr;
+            /* Header row (64px) and main content row */
+        }
+
+        /* Sidebar transition for smooth slide-in/out */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+            z-index: 20;
+        }
+
+        /* Apply styles for dark mode */
+        .dark body {
+            background-color: #111827; /* Gray 900 */
+            color: #E5E7EB; /* Gray 200 */
+        }
+        
+        /* Modal Backdrop */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 50; /* Above everything else */
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        /* Custom animation for quick click feedback */
+        @keyframes pulse-quick {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .animate-pulse-quick {
+            animation: pulse-quick 0.3s ease-in-out 1;
+        }
+
+        /* Custom Tailwind CSS Classes for reusability */
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 12px;
+            color: #4B5563; /* gray-600 */
+            font-weight: 500;
+            transition: background-color 0.15s, color 0.15s;
+            margin-bottom: 8px;
+        }
+        .dark .nav-link {
+            color: #D1D5DB; /* gray-300 */
+        }
+        .nav-link:hover {
+            background-color: #F3F4F6; /* gray-100 */
+            color: #10B981; /* primary-green */
+        }
+        .dark .nav-link:hover {
+            background-color: #374151; /* gray-700 */
+            color: #10B981; /* primary-green */
+        }
+        .nav-link svg {
+            margin-right: 12px;
+        }
+        .stat-card {
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+            cursor: default;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        .quick-action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            color: white;
+            transition: background-color 0.15s;
+        }
+        .table-th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6B7280; /* gray-500 */
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .dark .table-th {
+            color: #9CA3AF; /* gray-400 */
+        }
+        .table-td {
+            padding: 1rem;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+        .schedule-item {
+            padding-left: 1rem;
+            transition: background-color 0.15s;
+            cursor: pointer;
+        }
+        .schedule-item:hover {
+            background-color: #F9FAFB;
+            border-color: #10B981;
+        }
+        .dark .schedule-item:hover {
+            background-color: #1F2937;
+            border-color: #10B981;
+        }
+        .profile-link-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            color: #4B5563; /* gray-600 */
+            transition: background-color 0.15s, color 0.15s;
+        }
+        .dark .profile-link-item {
+            color: #D1D5DB; /* gray-300 */
+        }
+        .profile-link-item:hover {
+            background-color: #F3F4F6; /* gray-100 */
+            color: #3B82F6; /* secondary-blue */
+        }
+        .dark .profile-link-item:hover {
+            background-color: #374151; /* gray-700 */
+            color: #3B82F6; /* secondary-blue */
+        }
+    </style>
+</head>
+
+<body>
+    <div id="dashboard-layout" class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+
+        <!-- 1. HEADER / TOP NAVIGATION -->
+        <header id="header" class="flex items-center justify-between px-4 sm:px-8 shadow-md dark:shadow-lg bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <!-- Left: Logo & Menu Toggle -->
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" title="Open main menu" class="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-green">
+                    <!-- Hamburger Menu Icon (SVG) -->
+                    <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+                <div class="text-xl font-bold text-primary-green tracking-wide">
+                    SchoolFlow
+                </div>
+            </div>
+
+            <!-- Center: Search Bar -->
+            <div class="hidden md:block w-full max-w-md mx-4">
+                <div class="relative">
+                    <input type="search" id="search" placeholder="Search students, assignments, or resources..."
+                        class="w-full py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-secondary-blue dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                    >
+                    <!-- Search Icon (SVG) -->
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <svg class="w-4 h-4 text-gray-400 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Actions & Profile -->
+            <div class="flex items-center space-x-3 sm:space-x-4">
+                
+                <!-- Dark Mode Toggle -->
+                <button id="dark-mode-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-secondary-blue" title="Toggle Dark Mode">
+                    <!-- Icon placeholder, updated by JS -->
+                    <svg id="theme-icon" class="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                </button>
+
+                <!-- Notifications -->
+                <button class="action-button relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-secondary-blue" data-action="View Notifications">
+                    <!-- Bell Icon (SVG) -->
+                    <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    </svg>
+                    <span class="absolute top-1 right-1 block h-2 w-2 rounded-full ring-2 ring-white dark:ring-gray-800 bg-red-500"></span>
+                </button>
+
+                <!-- Profile Button (Clickable) -->
+                <button id="profile-button" class="relative flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition cursor-pointer">
+                    <img class="h-10 w-10 rounded-full object-cover border-2 border-primary-green" src="https://placehold.co/40x40/10B981/ffffff?text=TD" alt="Teacher Profile">
+                    <div class="hidden sm:block text-left">
+                        <div class="text-sm font-medium">Dr. J. Smith</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Math Teacher</div>
+                    </div>
+                    <!-- Dropdown Arrow Icon (Chevron Down SVG) -->
+                    <svg class="w-4 h-4 text-gray-400 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- 2. MAIN CONTENT AREA (Sidebar + Content) -->
+        <div class="flex flex-1 overflow-hidden">
+
+            <!-- Sidebar -->
+            <nav id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full lg:translate-x-0 lg:relative w-64 bg-white dark:bg-gray-800 shadow-xl lg:shadow-md pt-4 overflow-y-auto border-r border-gray-200 dark:border-gray-700">
+                <div class="px-6">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <span class="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">Navigation</span>
+                    </div>
+                    
+                    <!-- Navigation Links - Now functional placeholders -->
+                    <a href="javascript:void(0)" class="nav-link action-link bg-primary-green text-white font-medium hover:bg-emerald-600 transition duration-150 mb-2 !text-white" data-action="Navigate to Dashboard">
+                        <!-- Dashboard Icon (SVG) -->
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="javascript:void(0)" class="nav-link action-link" data-action="Navigate to Classes (4)">
+                        <!-- Classes Icon (SVG) -->
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13a4.002 4.002 0 00-4 4v7a4 4 0 008 0v-7a4.002 4.002 0 00-4-4z"></path></svg>
+                        <span>Classes (4)</span>
+                    </a>
+                    <a href="javascript:void(0)" class="nav-link action-link" data-action="Navigate to Assignments">
+                        <!-- Assignments Icon (SVG) -->
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        <span>Assignments</span>
+                    </a>
+                    <a href="javascript:void(0)" class="nav-link action-link" data-action="Navigate to Students">
+                        <!-- Students Icon (SVG) -->
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <span>Students</span>
+                    </a>
+                    <a href="javascript:void(0)" class="nav-link action-link" data-action="Navigate to Settings">
+                        <!-- Settings Icon (SVG) -->
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </nav>
+
+            <!-- Main Dashboard Content -->
+            <main class="flex-1 p-4 sm:p-8 overflow-y-auto">
+                <h1 class="text-3xl font-extrabold mb-8 text-gray-800 dark:text-gray-100">Welcome, Dr. Smith</h1>
+
+                <!-- STATS CARDS (Static, non-clickable) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                    <!-- Card 1: Total Students -->
+                    <div class="stat-card bg-white dark:bg-gray-800 border-l-4 border-secondary-blue">
+                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Students</div>
+                        <div class="text-3xl font-bold mt-1 text-gray-900 dark:text-gray-100">124</div>
+                        <div class="text-xs text-secondary-blue mt-2">in 4 classes</div>
+                    </div>
+
+                    <!-- Card 2: Pending Grades -->
+                    <div class="stat-card bg-white dark:bg-gray-800 border-l-4 border-red-500">
+                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Grades</div>
+                        <div class="text-3xl font-bold mt-1 text-gray-900 dark:text-gray-100">28</div>
+                        <div class="text-xs text-red-500 mt-2">Highest priority</div>
+                    </div>
+
+                    <!-- Card 3: Average Grade -->
+                    <div class="stat-card bg-white dark:bg-gray-800 border-l-4 border-primary-green">
+                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Average Class Grade</div>
+                        <div class="text-3xl font-bold mt-1 text-gray-900 dark:text-gray-100">88.5%</div>
+                        <div class="text-xs text-primary-green mt-2">Up 1.2% from last month</div>
+                    </div>
+
+                    <!-- Card 4: Upcoming Class -->
+                    <div class="stat-card bg-white dark:bg-gray-800 border-l-4 border-yellow-500">
+                        <div class="text-sm font-medium text-gray-500 dark:text-gray-400">Next Class</div>
+                        <div class="text-3xl font-bold mt-1 text-gray-900 dark:text-gray-100">Algebra I</div>
+                        <div class="text-xs text-yellow-500 mt-2">Today, 2:00 PM (Rm 305)</div>
+                    </div>
+                </div>
+
+                <!-- MAIN SECTIONS: Assignments & Quick Actions -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    <!-- LEFT COLUMN: Recent Activity / Assignments -->
+                    <div class="lg:col-span-2 space-y-8">
+                        
+                        <!-- Recent Assignments Table -->
+                        <div class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+                            <h2 class="text-xl font-semibold mb-6 border-b pb-3 border-gray-100 dark:border-gray-700">Recent Assignment Submissions</h2>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead class="bg-gray-50 dark:bg-gray-700">
+                                        <tr>
+                                            <th class="table-th">Assignment</th>
+                                            <th class="table-th">Class</th>
+                                            <th class="table-th">Submissions</th>
+                                            <th class="table-th">Due Date</th>
+                                            <th class="table-th">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="assignment-table-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+                                        <!-- Data will be populated here by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button class="action-button mt-4 w-full text-center text-sm font-medium text-secondary-blue hover:text-blue-700 dark:hover:text-blue-400 transition" data-action="View All Assignments">
+                                View All Assignments &rarr;
+                            </button>
+                        </div>
+
+                        <!-- Class Performance Chart Placeholder -->
+                        <div class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg h-80 flex items-center justify-center">
+                            <span class="text-gray-400 dark:text-gray-500">[Chart Placeholder: Performance Trends]</span>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Quick Actions / Schedule -->
+                    <div class="space-y-8 lg:col-span-1">
+                        <!-- Quick Actions -->
+                        <div class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+                            <h2 class="text-xl font-semibold mb-4 border-b pb-3 border-gray-100 dark:border-gray-700">Quick Actions</h2>
+                            <div class="space-y-3">
+                                <button class="quick-action-btn bg-primary-green hover:bg-emerald-600 action-button" data-action="Create New Assignment">
+                                    <!-- Icon: Add (SVG) -->
+                                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Create New Assignment
+                                </button>
+                                <button class="quick-action-btn bg-secondary-blue hover:bg-blue-600 action-button" data-action="View Student Directory">
+                                    <!-- Icon: User Plus (SVG) -->
+                                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM5 19a2 2 0 01-2-2v-2a2 2 0 012-2h10a2 2 0 012 2v2a2 2 0 01-2 2H5z"></path></svg>
+                                    View Student Directory
+                                </button>
+                                <button class="quick-action-btn bg-gray-500 hover:bg-gray-600 action-button" data-action="Open Parent Contact Form">
+                                    <!-- Icon: Message (SVG) -->
+                                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-2.924-.499A5.88 5.88 0 015 21l-1.92-1.92c-.61-.61-1.35-1.1-2.17-1.46C.76 17.5 0 16.29 0 15v-3c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                    Contact Parents/Guardians
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Upcoming Schedule (The list items here are not buttons, but I'll add a hover effect) -->
+                        <div class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg">
+                            <h2 class="text-xl font-semibold mb-4 border-b pb-3 border-gray-100 dark:border-gray-700">Today's Schedule</h2>
+                            <ul class="space-y-4">
+                                <li class="schedule-item border-l-4 border-secondary-blue">
+                                    <p class="font-medium">8:00 AM - 9:30 AM</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Geometry Honors (Rm 304)</p>
+                                </li>
+                                <li class="schedule-item border-l-4 border-primary-green">
+                                    <p class="font-medium">10:00 AM - 11:30 AM</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Office Hours / Planning</p>
+                                </li>
+                                <li class="schedule-item border-l-4 border-yellow-500">
+                                    <p class="font-medium">2:00 PM - 3:30 PM</p>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Algebra I (Rm 305)</p>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+    </div>
+
+    <!-- 3. PROFILE MODAL/POPUP (Hidden by default) -->
+    <div id="profile-modal" class="hidden fixed inset-0 modal-backdrop flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
+            
+            <!-- Modal Header -->
+            <div class="flex justify-between items-start border-b pb-3 mb-4 dark:border-gray-700">
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100" id="modal-headline">
+                    User Profile & Account
+                </h3>
+                <button id="close-modal-button" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition focus:outline-none">
+                    <!-- Close Icon (SVG) -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="space-y-6">
+                <!-- Profile Summary -->
+                <div class="flex flex-col items-center text-center pb-4 border-b dark:border-gray-700">
+                    <img class="h-24 w-24 rounded-full object-cover border-4 border-primary-green mb-3" src="https://placehold.co/96x96/10B981/ffffff?text=DS" alt="Dr. Smith Profile">
+                    <p class="text-xl font-semibold">Dr. Jane Smith</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Secondary Math Teacher | Room 305</p>
+                    <p class="text-xs text-primary-green">Member since August 2018</p>
+                </div>
+
+                <!-- Account Settings Links - Now functional placeholders -->
+                <div class="space-y-2">
+                    <a href="javascript:void(0)" class="profile-link-item action-link" data-action="Edit Personal Information">
+                        <!-- Icon: User (SVG) -->
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        Edit Personal Information
+                    </a>
+                    <a href="javascript:void(0)" class="profile-link-item action-link" data-action="Change Password">
+                        <!-- Icon: Lock (SVG) -->
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10V7a3 3 0 016 0v3"></path></svg>
+                        Change Password
+                    </a>
+                    <a href="javascript:void(0)" class="profile-link-item action-link" data-action="View Notification Preferences">
+                        <!-- Icon: Mail (SVG) -->
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        Notification Preferences
+                    </a>
+                </div>
+            </div>
+
+            <!-- Modal Footer (Logout) -->
+            <div class="mt-6 pt-4 border-t dark:border-gray-700">
+                <button class="action-button w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition" data-action="Sign Out User">
+                    <!-- Icon: Logout (SVG) -->
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    Sign Out
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- DOM ELEMENTS ---
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.getElementById('menu-toggle');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const html = document.documentElement;
+        const themeIcon = document.getElementById('theme-icon');
+        
+        // Modal Elements
+        const profileButton = document.getElementById('profile-button');
+        const profileModal = document.getElementById('profile-modal');
+        const closeModalButton = document.getElementById('close-modal-button');
+
+        // Mock Data for Assignments Table
+        const assignments = [
+            { id: 1, name: "Quadratic Equations HW 5", class: "Algebra I", submitted: 20, total: 32, dueDate: "Oct 25" },
+            { id: 2, name: "Unit 3 Test Review", class: "Geometry Honors", submitted: 15, total: 30, dueDate: "Nov 1" },
+            { id: 3, name: "Historical Context Essay", class: "AP Calculus", submitted: 5, total: 28, dueDate: "Oct 28" },
+            { id: 4, name: "Mid-Term Exam (Draft)", class: "Algebra I", submitted: 32, total: 32, dueDate: "Oct 18" },
+        ];
+
+        // --- CORE FUNCTIONALITY ---
+
+        // 1. Sidebar Toggle Functionality (for Mobile)
+        function toggleSidebar() {
+            const isHidden = sidebar.classList.contains('-translate-x-full');
+            if (isHidden) {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('shadow-2xl');
+                document.body.classList.add('overflow-hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                sidebar.classList.remove('shadow-2xl');
+                document.body.classList.remove('overflow-hidden');
+            }
+        }
+        menuToggle.addEventListener('click', toggleSidebar);
+
+        // 2. Dark Mode Toggle Functionality
+        function updateThemeIcon(isDark) {
+            if (isDark) {
+                // Moon Icon
+                themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>`;
+            } else {
+                // Sun Icon
+                themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>`;
+            }
+        }
+
+        function toggleDarkMode() {
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                updateThemeIcon(false);
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                updateThemeIcon(true);
+            }
+        }
+        darkModeToggle.addEventListener('click', toggleDarkMode);
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                html.classList.add('dark');
+                updateThemeIcon(true);
+            } else {
+                html.classList.remove('dark');
+                updateThemeIcon(false);
+            }
+        }
+
+
+        // 3. Profile Modal Functionality
+        function openProfileModal() {
+            profileModal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeProfileModal() {
+            profileModal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        profileButton.addEventListener('click', openProfileModal);
+        closeModalButton.addEventListener('click', closeProfileModal);
+
+        // Close when clicking backdrop
+        profileModal.addEventListener('click', (event) => {
+            if (event.target === profileModal) {
+                closeProfileModal();
+            }
+        });
+
+        // 4. Populate Assignments Table (Mock Data Rendering)
+        function renderAssignmentTable() {
+            const tbody = document.getElementById('assignment-table-body');
+            tbody.innerHTML = ''; // Clear existing content
+
+            assignments.forEach(assignment => {
+                const isUrgent = assignment.total - assignment.submitted > 10;
+                const progressColor = isUrgent ? 'bg-red-500' : 'bg-primary-green';
+                const textColor = isUrgent ? 'text-red-600 dark:text-red-400' : 'text-primary-green dark:text-emerald-400';
+                
+                const row = document.createElement('tr');
+                row.classList.add('hover:bg-gray-50', 'dark:hover:bg-gray-700/50', 'transition');
+                
+                // NOTE: Added 'action-button' class and data-action attribute to the Grade button
+                row.innerHTML = `
+                    <td class="table-td font-medium text-gray-900 dark:text-gray-100">${assignment.name}</td>
+                    <td class="table-td text-gray-500 dark:text-gray-400">${assignment.class}</td>
+                    <td class="table-td">
+                        <span class="font-semibold ${textColor}">${assignment.total - assignment.submitted} pending</span> / ${assignment.total}
+                        <div class="h-2 mt-1 w-20 rounded-full bg-gray-200 dark:bg-gray-600">
+                            <div class="h-2 rounded-full ${progressColor}" style="width: ${assignment.submitted / assignment.total * 100}%"></div>
+                        </div>
+                    </td>
+                    <td class="table-td text-gray-500 dark:text-gray-400">${assignment.dueDate}</td>
+                    <td class="table-td">
+                        <button class="action-button px-3 py-1 text-sm font-semibold rounded-full bg-secondary-blue text-white hover:bg-blue-600 transition" data-action="Grade Assignment: ${assignment.name} (${assignment.class})">
+                            Grade
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // 5. Generic Action Handler (Fix for all non-responsive buttons/links)
+        document.addEventListener('click', (event) => {
+            // Check for both action-button (for <button> elements) and action-link (for <a> elements)
+            const target = event.target.closest('.action-button') || event.target.closest('.action-link');
+
+            if (target) {
+                // Prevent default link behavior (like page refresh on 'href="javascript:void(0)"' or '#' in some contexts)
+                event.preventDefault();
+
+                const action = target.getAttribute('data-action');
+                if (action) {
+                    console.log(`[Action Triggered] -> ${action}`);
+
+                    // Provide quick visual feedback
+                    target.classList.add('animate-pulse-quick');
+                    setTimeout(() => {
+                        target.classList.remove('animate-pulse-quick');
+                    }, 300); 
+
+                    // Close the modal if the action was "Sign Out"
+                    if (action === "Sign Out User") {
+                        closeProfileModal();
+                    }
+                }
+            }
+        });
+
+
+        // --- INITIALIZATION ---
+        window.onload = function () {
+            initTheme();
+            renderAssignmentTable();
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', (event) => {
+                const isClickInsideSidebar = sidebar.contains(event.target);
+                const isClickOnToggle = menuToggle.contains(event.target);
+                const isMobile = window.innerWidth < 1024; 
+
+                if (isMobile && !isClickInsideSidebar && !isClickOnToggle && !sidebar.classList.contains('-translate-x-full')) {
+                    toggleSidebar();
+                }
+            });
+        };
+    </script>
+</body>
+</html>

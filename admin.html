@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Main Admin Dashboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom configuration for Tailwind -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // Enable dark mode via class
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-accent': '#2563EB', // Blue 600 - Main accent color
+                        'secondary-red': '#DC2626', // Red 600
+                        'tertiary-yellow': '#FBBF24', // Amber 400
+                        'info-cyan': '#06B6D4', // Cyan 500
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Apply smooth transitions globally */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Ensure the main container scrolls independently */
+        #admin-layout {
+            min-height: 100vh;
+            display: grid;
+            grid-template-rows: auto 1fr;
+        }
+
+        /* Sidebar transition for smooth slide-in/out */
+        #sidebar {
+            transition: transform 0.3s ease-in-out;
+            z-index: 30; /* Higher Z-index than backdrop */
+        }
+
+        /* Apply styles for dark mode */
+        .dark body {
+            background-color: #0F172A;
+            color: #E2E8F0;
+        }
+
+        .dark .dashboard-card {
+            background-color: #1E293B;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Card Styles */
+        .dashboard-card {
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            background-color: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .dashboard-card.action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+        }
+
+        /* Sidebar Nav Links */
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 8px;
+            color: #64748B;
+            font-weight: 500;
+            transition: background-color 0.15s, color 0.15s;
+            margin-bottom: 4px;
+        }
+
+        .dark .nav-link {
+            color: #94A3B8;
+        }
+
+        .nav-link:hover {
+            background-color: #EFF6FF;
+            color: #2563EB;
+        }
+
+        .dark .nav-link:hover {
+            background-color: #334155;
+            color: #2563EB;
+        }
+
+        .nav-link.active {
+            background-color: #2563EB;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4);
+        }
+
+        .nav-link.active:hover {
+            background-color: #1D4ED8;
+            color: white;
+        }
+
+        /* Mobile Backdrop */
+        #sidebar-backdrop {
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        #sidebar-backdrop.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+    <div id="admin-layout" class="min-h-screen">
+
+        <!-- 1. HEADER / TOP BAR -->
+        <header id="header" class="flex items-center justify-between px-4 sm:px-8 shadow-md dark:shadow-lg bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 h-16 sticky top-0 z-40">
+
+            <!-- Left: Logo & Menu Toggle -->
+            <div class="flex items-center space-x-4">
+                <button id="menu-toggle" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-accent" title="Toggle Navigation Menu">
+                    <!-- Hamburger Menu Icon (SVG) -->
+                    <svg class="w-6 h-6 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+                <div class="text-xl font-extrabold text-primary-accent tracking-wider">
+                    AdminCentral <span class="text-sm font-light text-slate-500 dark:text-slate-400 hidden sm:inline">| Main Control</span>
+                </div>
+            </div>
+
+            <!-- Right: Actions & Profile -->
+            <div class="flex items-center space-x-4">
+
+                <!-- Dark Mode Toggle -->
+                <button id="dark-mode-toggle" class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-accent" title="Toggle Dark Mode">
+                    <!-- Icon placeholder, updated by JS -->
+                    <svg id="theme-icon" class="w-6 h-6 text-slate-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                </button>
+
+                <!-- Profile Button -->
+                <button id="profile-button" class="flex items-center space-x-2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">
+                    <img class="h-10 w-10 rounded-full object-cover border-2 border-primary-accent" src="https://placehold.co/40x40/2563EB/ffffff?text=MA" alt="Main Admin Profile">
+                    <div class="hidden sm:block text-left">
+                        <div class="text-sm font-medium">Main Admin</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400">System Director</div>
+                    </div>
+                </button>
+            </div>
+        </header>
+
+        <!-- 2. MAIN CONTENT AREA (Sidebar + Content) -->
+        <div class="flex flex-1 overflow-hidden relative">
+
+            <!-- Sidebar Backdrop for Mobile -->
+            <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black bg-opacity-50 lg:hidden"></div>
+
+            <!-- Sidebar -->
+            <nav id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full lg:translate-x-0 lg:relative w-64 bg-white dark:bg-slate-800 shadow-xl lg:shadow-md pt-6 overflow-y-auto border-r border-slate-200 dark:border-slate-700 transition-transform duration-300 ease-in-out">
+                <div class="px-5 space-y-4">
+                    <p class="text-xs font-semibold uppercase text-slate-400 mb-2 px-1">Control Panel</p>
+
+                    <a href="javascript:void(0)" class="nav-link action-link active" data-action="Navigate to System Overview">
+                        <!-- Home Icon (SVG) -->
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        <span>System Overview</span>
+                    </a>
+                    <a href="javascript:void(0)" class="nav-link action-link" data-action="Manage Administrators">
+                        <!-- Users Icon (SVG) - Key Admin Focus -->
+                        <svg class="w-5 h-5 mr-3 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2v4a2 2 0 01-2 2h-4a2 2 0 01-2-2v-4a2 2 0 012-2h4z"></path>
+                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11h.01M17 17v2a2 2 0 01-2 2H9a2 2 0 01-2-2v-2"></path>
+                        </svg>
+                        <span>Admin/User Control</span>
+                    </a>
+                    <a href="javascript:void(0)" class="nav-link action-link" data-action="View Financial Reports">
+                        <!-- Finance Icon (SVG) -->
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 13h.01M17 14h6m-3-3h.01M17 18h.01M5 12h.01M5 16h.01M12 5v14a3 3 0 003-3V8a3 3 0 00-3-3z"></path>
+                        </svg>
+                        <span>Finance & Budget</span>
+                    </a>
+                    <a href="javascript:void(0)" class="nav-link action-link" data-action="Manage Curriculum">
+                        <!-- Book Icon (SVG) -->
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13a4.002 4.002 0 00-4 4v7a4 4 0 008 0v-7a4.002 4.002 0 00-4-4z"></path>
+                        </svg>
+                        <span>Academics & Curriculum</span>
+                    </a>
+
+                    <div class="pt-8 space-y-4 border-t border-slate-200 dark:border-slate-700 mt-8">
+                        <p class="text-xs font-semibold uppercase text-slate-400 mb-2 px-1">System & Operations</p>
+                        <a href="javascript:void(0)" class="nav-link action-link" data-action="Manage Events">
+                            <!-- Calendar Icon (SVG) -->
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span>School Calendar</span>
+                        </a>
+                        <a href="javascript:void(0)" class="nav-link action-link" data-action="View System Logs">
+                            <!-- Server Icon (SVG) -->
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+                            </svg>
+                            <span>System & Logs</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Dashboard Content -->
+            <main class="flex-1 p-4 sm:p-8 overflow-y-auto">
+                <h1 class="text-3xl font-extrabold mb-8 text-slate-800 dark:text-slate-100">System Overview Dashboard</h1>
+
+                <!-- STATS CARDS GRID -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                    <!-- Card 1: Total Enrollment -->
+                    <div class="dashboard-card action-card border-t-4 border-primary-accent" data-action="View Detailed Enrollment Report">
+                        <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Enrollment</div>
+                        <div class="text-4xl font-extrabold mt-1 text-primary-accent">1,452</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-center">
+                            <span class="text-green-500 font-semibold mr-1">+3.2%</span> since last year
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Sub-Admin Accounts -->
+                    <div class="dashboard-card action-card border-t-4 border-info-cyan" data-action="View Sub-Admin Accounts">
+                        <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Sub-Admins</div>
+                        <div class="text-4xl font-extrabold mt-1 text-info-cyan">5</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-center">
+                            <span class="text-blue-500 font-semibold mr-1">3</span> currently active
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Staff Active -->
+                    <div class="dashboard-card action-card border-t-4 border-green-600" data-action="View Staff Directory and HR Dashboard">
+                        <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Active Staff</div>
+                        <div class="text-4xl font-extrabold mt-1 text-green-600">124</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-center">
+                            <span class="font-semibold mr-1">96%</span> daily attendance
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Open Issues (Tickets) -->
+                    <div class="dashboard-card action-card border-t-4 border-secondary-red" data-action="Resolve Open Support Tickets">
+                        <div class="text-sm font-medium text-slate-500 dark:text-slate-400">Open Support Tickets</div>
+                        <div class="text-4xl font-extrabold mt-1 text-secondary-red">18</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-center">
+                            <span class="text-red-500 font-semibold mr-1">4</span> marked as high priority
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MAIN WIDGETS -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Widget 1: Sub-Admin Oversight (New Widget) -->
+                    <div class="lg:col-span-1">
+                        <div class="dashboard-card !cursor-default h-full">
+                            <h2 class="text-xl font-semibold mb-6 border-b pb-3 border-slate-100 dark:border-slate-700">Sub-Admin Oversight</h2>
+                            <ul class="space-y-4">
+                                <li class="flex justify-between items-center text-sm py-2">
+                                    <div class="font-medium">Finance Admin</div>
+                                    <span class="text-sm text-green-500 font-medium">Active (Last 12 min)</span>
+                                </li>
+                                <li class="flex justify-between items-center text-sm py-2">
+                                    <div class="font-medium">Academics Head</div>
+                                    <span class="text-sm text-yellow-500 font-medium">Inactive (1 hr ago)</span>
+                                </li>
+                                <li class="flex justify-between items-center text-sm py-2">
+                                    <div class="font-medium">HR/Staff Admin</div>
+                                    <span class="text-sm text-green-500 font-medium">Active (5 min ago)</span>
+                                </li>
+                                <li class="flex justify-between items-center text-sm py-2">
+                                    <div class="font-medium">IT Support</div>
+                                    <span class="text-sm text-red-500 font-medium">Disabled Access</span>
+                                </li>
+                            </ul>
+                            <button class="action-card mt-6 w-full text-center text-sm font-medium text-primary-accent hover:text-blue-700 dark:hover:text-blue-400 transition" data-action="Review Admin Permissions and Logs">
+                                Manage Permissions &rarr;
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Widget 2: Recent Activity Log (2/3 width on LG - now 2/3) -->
+                    <div class="lg:col-span-2">
+                        <div class="dashboard-card !cursor-default h-full">
+                            <h2 class="text-xl font-semibold mb-6 border-b pb-3 border-slate-100 dark:border-slate-700">Recent System Activity</h2>
+                            <ul class="space-y-4">
+                                <li class="flex items-center space-x-3 text-sm">
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">SUCCESS</span>
+                                    <span class="text-slate-700 dark:text-slate-300">Timetable Update published for Semester 2.</span>
+                                    <span class="text-slate-400 dark:text-slate-500 flex-1 text-right">5 min ago</span>
+                                </li>
+                                <li class="flex items-center space-x-3 text-sm">
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">ERROR</span>
+                                    <span class="text-slate-700 dark:text-slate-300">Database connection timeout on nightly backup.</span>
+                                    <span class="text-slate-400 dark:text-slate-500 flex-1 text-right">3 hrs ago</span>
+                                </li>
+                                <li class="flex items-center space-x-3 text-sm">
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-primary-accent dark:bg-blue-900 dark:text-blue-300">USER</span>
+                                    <span class="text-slate-700 dark:text-slate-300">New faculty account created: Dr. A. Khan.</span>
+                                    <span class="text-slate-400 dark:text-slate-500 flex-1 text-right">Yesterday</span>
+                                </li>
+                                <li class="flex items-center space-x-3 text-sm">
+                                    <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-tertiary-yellow dark:bg-yellow-900 dark:text-yellow-300">ALERT</span>
+                                    <span class="text-slate-700 dark:text-slate-300">Low disk space (15%) on secondary file server.</span>
+                                    <span class="text-slate-400 dark:text-slate-500 flex-1 text-right">2 days ago</span>
+                                </li>
+                            </ul>
+                            <button class="action-card mt-6 w-full text-center text-sm font-medium text-primary-accent hover:text-blue-700 dark:hover:text-blue-400 transition" data-action="View Full Activity Log">
+                                View Full Activity Log &rarr;
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+    </div>
+
+    <!-- 3. NOTIFICATION POPUP (for action feedback) -->
+    <div id="notificationContainer" class="fixed bottom-4 right-4 z-50 w-full max-w-sm opacity-0 transition duration-300 ease-in-out transform translate-x-full pointer-events-none">
+        <div id="notification" class="bg-white dark:bg-slate-700 rounded-xl shadow-2xl overflow-hidden ring-1 ring-black ring-opacity-5">
+            <div class="p-4 flex items-start space-x-4">
+                <div id="notificationIcon" class="flex-shrink-0 pt-0.5 text-primary-accent">
+                    <!-- Default Info Icon -->
+                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p id="notificationTitle" class="text-sm font-semibold text-slate-900 dark:text-slate-100">Action Successful</p>
+                    <p id="notificationMessage" class="mt-1 text-sm text-slate-500 dark:text-slate-400">Action logged to console.</p>
+                </div>
+                <div class="flex-shrink-0 flex items-center ml-4">
+                    <button onclick="hideNotification()" class="bg-white dark:bg-slate-700 rounded-md inline-flex text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-accent p-1 transition">
+                        <span class="sr-only">Close</span>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- DOM ELEMENTS ---
+        const sidebar = document.getElementById('sidebar');
+        const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+        const menuToggle = document.getElementById('menu-toggle');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const html = document.documentElement;
+        const themeIcon = document.getElementById('theme-icon');
+        
+        // Notification elements
+        const notifContainer = document.getElementById('notificationContainer');
+        const notifTitle = document.getElementById('notificationTitle');
+        const notifMessage = document.getElementById('notificationMessage');
+        const notifIcon = document.getElementById('notificationIcon');
+        let timeoutId;
+
+        // --- CORE UI FUNCTIONALITY ---
+
+        // 1. Sidebar Toggle Functionality (for Mobile)
+        function toggleSidebar() {
+            const isHidden = sidebar.classList.contains('-translate-x-full');
+            if (isHidden) {
+                // Show sidebar and backdrop
+                sidebar.classList.remove('-translate-x-full');
+                sidebarBackdrop.classList.add('visible');
+                document.body.classList.add('overflow-hidden');
+            } else {
+                // Hide sidebar and backdrop
+                sidebar.classList.add('-translate-x-full');
+                sidebarBackdrop.classList.remove('visible');
+                document.body.classList.remove('overflow-hidden');
+            }
+        }
+        menuToggle.addEventListener('click', toggleSidebar);
+
+        // 2. Dark Mode Toggle Functionality
+        function updateThemeIcon(isDark) {
+            if (isDark) {
+                // Moon Icon
+                themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>`;
+            } else {
+                // Sun Icon
+                themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>`;
+            }
+        }
+
+        function toggleDarkMode() {
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                updateThemeIcon(false);
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                updateThemeIcon(true);
+            }
+        }
+        darkModeToggle.addEventListener('click', toggleDarkMode);
+
+        function initTheme() {
+            // Check for explicit saved theme preference first
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                html.classList.add('dark');
+                updateThemeIcon(true);
+            } else {
+                html.classList.remove('dark');
+                updateThemeIcon(false);
+            }
+        }
+
+
+        // 3. Notification Logic
+        function showNotification(title, message, type = 'info') {
+            clearTimeout(timeoutId);
+
+            notifTitle.textContent = title;
+            notifMessage.textContent = message;
+
+            // Update icon and color based on type
+            let iconSvg = '';
+            let colorClass = 'text-primary-accent';
+
+            switch (type) {
+                case 'error':
+                    iconSvg = `<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+                    colorClass = 'text-secondary-red';
+                    break;
+                case 'success':
+                    iconSvg = `<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+                    colorClass = 'text-green-500';
+                    break;
+                case 'warning':
+                    iconSvg = `<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.332 16.5c-.77 1.333.192 3 1.732 3z" /></svg>`;
+                    colorClass = 'text-tertiary-yellow';
+                    break;
+                case 'info':
+                default:
+                    iconSvg = `<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+                    colorClass = 'text-primary-accent';
+                    break;
+            }
+            notifIcon.innerHTML = iconSvg;
+            notifIcon.classList.remove('text-primary-accent', 'text-secondary-red', 'text-green-500', 'text-tertiary-yellow');
+            notifIcon.classList.add(colorClass);
+
+            // Show the notification
+            notifContainer.classList.remove('opacity-0', 'translate-x-full', 'pointer-events-none');
+            // Force reflow
+            void notifContainer.offsetWidth; 
+            notifContainer.classList.add('opacity-100', 'translate-x-0');
+            
+            // Set auto-dismissal (5 seconds)
+            timeoutId = setTimeout(hideNotification, 5000);
+        }
+
+        function hideNotification() {
+            clearTimeout(timeoutId);
+            notifContainer.classList.remove('opacity-100', 'translate-x-0');
+            
+            // Re-add hidden state classes after transition (0.3s)
+            setTimeout(() => {
+                notifContainer.classList.add('opacity-0', 'translate-x-full', 'pointer-events-none');
+            }, 300); 
+        }
+
+        // 4. Generic Action Handler (for all links/buttons)
+        document.addEventListener('click', (event) => {
+            const target = event.target.closest('[data-action]');
+
+            if (target) {
+                event.preventDefault();
+                
+                const action = target.getAttribute('data-action');
+                if (action) {
+                    // Close sidebar on navigation click on mobile only if the sidebar is open
+                    if (window.innerWidth < 1024 && !sidebar.classList.contains('-translate-x-full')) {
+                        toggleSidebar();
+                    }
+
+                    console.log(`[Admin Action Triggered] -> ${action}`);
+                    
+                    let title = "Action Logged";
+                    let message = `Admin initiated action: "${action}"`;
+                    let type = 'info';
+
+                    if (action.includes('Manage Administrators') || action.includes('Admin Permissions')) {
+                        title = "Critical Action Logged";
+                        message = `Reviewing admin access and permissions.`;
+                        type = 'error'; 
+                    } else if (action.includes('View Detailed Enrollment')) {
+                        title = "Report Generated";
+                        message = `Detailed Enrollment Report is ready for download.`;
+                        type = 'success';
+                    }
+
+                    showNotification(title, message, type);
+                }
+            }
+        });
+
+
+        // --- INITIALIZATION ---
+        window.onload = function () {
+            initTheme();
+            
+            // Set up listener to close sidebar when clicking outside on mobile
+            document.addEventListener('click', (event) => {
+                const isClickInsideSidebar = sidebar.contains(event.target);
+                const isClickOnToggle = menuToggle.contains(event.target);
+                const isMobile = window.innerWidth < 1024; 
+
+                if (isMobile && !isClickInsideSidebar && !isClickOnToggle && !sidebar.classList.contains('-translate-x-full')) {
+                    // This handles clicks on the backdrop
+                    if (sidebarBackdrop.contains(event.target)) {
+                        toggleSidebar();
+                    }
+                }
+            });
+        };
+    </script>
+</body>
+</html>
